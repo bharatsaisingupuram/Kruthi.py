@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#090a0f">
+<title>kruthi.py</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+ --bg:#090a0f;--bar:#0b0c11;--panel:#12141b;--panel2:#181b24;--line:#282b35;
+ --text:#e6e7eb;--muted:#7d818c;--green:#8fc7a7;--greenText:#0a100d;
+ --stop:#61383e;--blue:#91aed0;--key:#1b1e26;--keyPress:#303541
+}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button{border:0;color:inherit;font:inherit;touch-action:manipulation}
+.app{height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+.top{height:86px;min-height:86px;display:flex;align-items:center;gap:11px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--bar)}
+.square{width:48px;height:48px;border-radius:10px;background:#171a22;display:grid;place-items:center;font-size:27px}
+.drop{width:52px;height:52px;border-radius:10px;background:#243b5b;display:grid;place-items:center;font-size:28px}
+.name{min-width:0;flex:1;font:22px ui-monospace,SFMono-Regular,Menlo,monospace;color:#a2a5ae;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run{height:60px;min-width:123px;padding:0 20px;border-radius:10px;background:var(--green);color:var(--greenText);font-size:22px;font-weight:750;display:flex;align-items:center;justify-content:center;gap:10px}
+.run:disabled{opacity:.6}.stop{width:60px;height:60px;border-radius:10px;background:var(--stop);font-size:21px}.save{font-size:28px}.kbd{font-size:25px}.sun{font-size:25px}
+.tabs{height:70px;min-height:70px;display:flex;overflow:auto;background:#0c0d12;border-bottom:1px solid var(--line);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{height:70px;min-width:175px;padding:0 20px;background:transparent;border-right:1px solid var(--line);color:#9b9ea8;font:20px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap}
+.tab.active{color:#e5e6eb;background:#12141b}
+.main{min-height:0;flex:1;display:flex;flex-direction:column}
+.editor{min-height:190px;flex:1;display:flex;overflow:hidden;background:#1e1e1e;position:relative}
+.gutter{width:76px;min-width:76px;border-right:1px solid #252831;color:#777b86;text-align:right;padding:13px 12px 80px 0;font:20px/1.55 ui-monospace,monospace;white-space:pre;overflow:hidden;user-select:none}
+.codeBox{min-width:0;flex:1;overflow:hidden;position:relative}
+.highlightWrap{position:relative;width:100%;height:100%;overflow:hidden;min-width:0}
+.highlightWrap pre,#code{position:absolute;inset:0;margin:0;width:100%;height:100%;min-width:0;padding:13px 16px 80px;border:0;outline:0;font:20px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;tab-size:4;overflow:auto}
+.highlightWrap pre{z-index:0;pointer-events:none;color:#d8dae1;background:#0b0c11}
+#code{z-index:1;resize:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#a1cdb1}
+#code::selection{background:#34546c;color:transparent;-webkit-text-fill-color:transparent}
+.syn-comment{color:#789a83}.syn-keyword{color:#82b9df}.syn-builtin{color:#d9c58b}.syn-string{color:#b9c88e}.syn-number{color:#c69bd3}.syn-def{color:#e4c58e}.syn-decorator{color:#c49bd8}.syn-op{color:#b7bbc5}.syn-bool{color:#c69bd3}
+.panel{height:275px;min-height:180px;background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column}
+.pheads{height:58px;display:flex;border-bottom:1px solid var(--line)}
+.phead{height:58px;padding:0 20px;background:transparent;color:#80838d;letter-spacing:2px;font-weight:800;font-size:18px}
+.phead.active{color:#e6e7eb;border-bottom:4px solid var(--blue)}
+.console{flex:1;overflow:auto;padding:18px 20px;font:18px/1.5 ui-monospace,monospace;color:#969aa5;white-space:pre-wrap}
+.console.ok{color:#a6d0b4}.console.err{color:#ff9696}.console.warn{color:#e0bf7a}
+.keyboard{height:300px;min-height:300px;padding:9px 12px 13px;background:#0b0d12;border-top:1px solid #22252d;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.krow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;min-height:50px}.krow::-webkit-scrollbar{display:none}
+.key{height:50px;min-width:54px;flex:1;border-radius:9px;background:var(--key);box-shadow:0 1px 0 #2b2f39 inset;color:#d0d2d9;font-size:18px;white-space:nowrap}
+.key:active{background:var(--keyPress);transform:translateY(1px)}
+.chip{flex:0 0 auto;min-width:72px;padding:0 13px}.wide{min-width:92px}.back{background:#38272a}.space{min-width:245px;flex:3}.enter{background:#202632}
+.selected{background:#8faed0;color:#111820;font-weight:800}
+.drawerMask{position:fixed;inset:0;background:#000a;z-index:50;display:none}.drawerMask.open{display:block}
+.drawer{position:absolute;left:0;top:0;bottom:0;width:min(355px,88vw);background:#11131a;border-right:1px solid #30333c;padding:18px 14px;overflow:auto}
+.drawer h2{margin:4px 8px 20px;font-size:24px}.mi{width:100%;padding:14px 12px;border-radius:10px;background:transparent;text-align:left;font-size:18px;display:flex;gap:13px;align-items:center}.mi:active{background:#1e212a}
+.sec{margin:18px 8px 7px;color:#777b85;font-size:12px;letter-spacing:2px}.card{padding:10px;border:1px solid #2b2e38;background:#181b23;border-radius:10px;margin:7px 0}.ct{display:flex;gap:7px;align-items:center}.cn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:15px ui-monospace,monospace}.sm{padding:7px 9px;border-radius:7px;background:#292d37;font-size:13px}.del{background:#4c2e33}.empty{padding:9px;color:#6f737d;font-size:14px}
+.dialog{position:fixed;inset:0;background:#000a;display:none;place-items:center;z-index:80}.dialog.open{display:grid}.box{width:min(420px,90vw);background:#181b23;border:1px solid #363a45;border-radius:14px;padding:18px}.box h3{margin:0 0 12px}.inp{width:100%;padding:13px;border-radius:9px;border:1px solid #3a3e48;background:#0c0e13;color:#fff;outline:0;font:16px ui-monospace,monospace}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.act{padding:10px 15px;border-radius:8px;background:#2a2e38}.primary{background:var(--green);color:#0c110e;font-weight:700}
+.inputLine{display:none;padding:8px 12px;border-top:1px solid #2a2d35;background:#0d0f14}.inputLine.show{display:flex;gap:8px}.inputLine input{flex:1;background:#181b23;border:1px solid #343844;color:#fff;border-radius:8px;padding:10px;font:16px ui-monospace,monospace;outline:0}.send{padding:0 15px;border-radius:8px;background:var(--green);color:#101510;font-weight:700}
+@media(max-width:700px){
+ .top{height:82px;min-height:82px;padding:7px 9px;gap:7px}.square{width:44px;height:44px}.drop{width:51px;height:51px}.run{height:52px;min-width:111px;padding:0 15px;font-size:20px}.stop{height:52px;width:52px}.save{display:grid}.name{font-size:19px}.tabs,.tab{height:62px;min-height:62px}.tab{min-width:160px;font-size:18px}.gutter{width:48px;min-width:48px;font-size:17px;padding-right:8px}.codeBox textarea{font-size:17px;line-height:1.5;padding:11px 10px 70px}.panel{height:245px}.phead{font-size:16px}.keyboard{height:285px;min-height:285px;padding:8px 9px 11px}.key{height:49px;min-width:48px}.space{min-width:190px}
+}
+
+.nameBtn{background:transparent;border:0;color:#aeb2bd;font:inherit;text-align:left;padding:0;min-width:0;cursor:pointer}.nameBtn:active{opacity:.75}
+#fileList .ct{gap:5px;flex-wrap:wrap}.sm.shareFile{border-color:#355b7a}.sm.ren{border-color:#4d5260}
+#renameDialog{z-index:1000}
+.shareTop{font-size:18px}.shareTop:active{transform:scale(.96)}</style>
+
+<style id="reference-size-fix">
+/* Reference screenshot sizing: keep the same compact proportions on mobile. */
+@media (max-width:700px){
+  .app{height:100dvh;overflow:hidden}
+
+  /* Header + file tabs */
+  .top{
+    height:10.6vw; min-height:10.6vw;
+    padding:1vw 1.9vw;
+    gap:1.4vw;
+  }
+  .square{width:6vw;height:6vw;border-radius:1.2vw;font-size:3.5vw}
+  .drop{width:6.2vw;height:6.2vw;border-radius:1.2vw;font-size:3.5vw}
+  .name{font-size:2.65vw}
+  .run{height:6.4vw;min-width:14.8vw;padding:0 2vw;border-radius:1.2vw;font-size:2.9vw;gap:1.1vw}
+  .stop{width:6.4vw;height:6.4vw;border-radius:1.2vw;font-size:2.6vw}
+  .save,.kbd,.sun{font-size:3.2vw}
+
+  .tabs{height:9.6vw;min-height:9.6vw}
+  .tab{
+    height:9.6vw;min-width:21vw;
+    padding:0 2.4vw;font-size:2.7vw;
+  }
+
+  /* Editor / terminal */
+  .editor{min-height:0}
+  .gutter{
+    width:9.1vw;min-width:9.1vw;
+    padding:1.5vw 1.4vw 8vw 0;
+    font-size:2.6vw;line-height:1.55
+  }
+  .codeBox textarea{
+    min-width:100%;
+    padding:1.5vw 1.8vw 8vw;
+    font-size:2.6vw;
+    line-height:1.55
+  }
+  .panel{
+    height:39.8vw;min-height:39.8vw;
+  }
+  .pheads,.phead{height:7vw;min-height:7vw}
+  .phead{padding:0 2.4vw;font-size:2.7vw}
+  .console{padding:2.2vw 2.4vw;font-size:2.55vw;line-height:1.5}
+  .inputLine{padding:1vw 1.4vw}
+  .inputLine input{padding:1.2vw;font-size:2.4vw}
+
+  /* Keyboard: same compact size and proportions as reference */
+  .keyboard{
+    height:61.8vw;min-height:61.8vw;
+    padding:1.05vw 1.5vw 1.5vw;
+    gap:1.05vw;
+  }
+  .krow{gap:1vw;min-height:6vw}
+  .key{
+    height:6vw;min-width:6vw;
+    border-radius:1vw;font-size:2.35vw;
+  }
+  .chip{min-width:9.2vw;padding:0 1.6vw}
+  .wide{min-width:10.8vw}
+  .space{min-width:29vw}
+}
+</style>
+
+
+<style id="pyflow-rich-keyboard">
+.vocab{display:flex;flex-direction:column;gap:7px;height:100%}
+.vocabTitle{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+.vocabTitle::-webkit-scrollbar{display:none}
+.vocabTitle button{flex:0 0 auto;height:44px;padding:0 13px;border-radius:8px;background:#191c24;color:#a9adb7;font-size:14px;font-weight:700}
+.vocabTitle button.active{background:#8faed0;color:#111820}
+.vocabWords{flex:1;overflow:auto;padding-bottom:2px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px}
+.vocabWords button{height:42px;padding:0 12px;border-radius:8px;background:#1a1d25;color:#d1d3da;font:15px ui-monospace,SFMono-Regular,Menlo,monospace}
+.vocabWords button:active{background:#303541}
+.vocabSub{width:100%;color:#777b86;font-size:11px;letter-spacing:1.5px;padding:3px 2px}
+@media(max-width:700px){
+ .highlightWrap{min-width:100%}
+ .highlightWrap pre,#code{min-width:100%;padding:1.5vw 1.8vw 8vw;font-size:2.6vw;line-height:1.55}
+ .vocabTitle button{height:6vw;font-size:2.1vw;padding:0 2vw}
+ .vocabWords button{height:5.8vw;font-size:2vw;padding:0 1.8vw}
+}
+</style>
+
+
+<style id="kruthi-topbar-clean">
+/* Kruthi.py top bar: no keyboard or light/dark buttons */
+.top .kbd, .top .keyboard, .top .theme, .top .sun, .top .moon,
+.top [aria-label*="keyboard" i], .top [aria-label*="theme" i],
+.top [title*="keyboard" i], .top [title*="theme" i],
+.top [title*="dark" i], .top [title*="light" i] { display:none !important; }
+</style>
+
+
+<style id="kruthi-splash-style">
+.kruthiSplash{
+ position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;overflow:hidden;
+ background:radial-gradient(circle at 50% 35%,#182334 0%,#0a0c11 48%,#050609 100%);
+ color:#e8ebf1;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+ transition:opacity .45s ease,visibility .45s ease;
+}
+.kruthiSplash.hide{opacity:0;visibility:hidden;pointer-events:none}
+.splashGlow{
+ position:absolute;width:55vw;height:55vw;max-width:420px;max-height:420px;
+ border-radius:50%;background:rgba(142,174,208,.10);filter:blur(28px);
+ animation:splashPulse 2.2s ease-in-out infinite;
+}
+.splashLogo{
+ position:relative;width:96px;height:96px;border-radius:26px;
+ display:grid;place-items:center;font-size:54px;font-weight:900;
+ background:linear-gradient(145deg,#8faed0,#405c7c);
+ box-shadow:0 0 45px rgba(143,174,208,.25);
+ animation:logoFloat 2s ease-in-out infinite;
+}
+.splashName{
+ position:relative;margin-top:20px;font-size:34px;font-weight:800;letter-spacing:1px;
+ animation:nameIn .8s ease-out both;
+}
+.splashTag{position:relative;margin-top:8px;color:#858c99;font-size:13px;animation:nameIn 1s ease-out both}
+.startKruthi{
+ position:relative;margin-top:34px;border:0;border-radius:14px;
+ padding:14px 42px;background:#8fb49e;color:#0b1110;
+ font-size:17px;font-weight:900;letter-spacing:1.5px;
+ box-shadow:0 8px 30px rgba(143,180,158,.18);
+ cursor:pointer;animation:startIn 1.2s ease-out both;
+}
+.startKruthi:active{transform:scale(.96)}
+.splashHint{position:relative;margin-top:13px;color:#555d69;font-size:10px}
+@keyframes splashPulse{50%{transform:scale(1.12);opacity:.65}}
+@keyframes logoFloat{50%{transform:translateY(-8px) rotate(2deg)}}
+@keyframes nameIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes startIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@media(max-width:700px){
+ .splashLogo{width:24vw;height:24vw;border-radius:6vw;font-size:13vw}
+ .splashName{font-size:8vw}.splashTag{font-size:3vw}
+ .startKruthi{margin-top:8vw;padding:3.5vw 11vw;border-radius:3vw;font-size:4vw}
+ .splashHint{font-size:2.5vw}
+}
+</style>
+
+
+<style id="kruthi-clean-editor">
+/* Simple, spacious coding area: one line-number gutter + clean syntax layer. */
+.codeBox{position:relative;min-width:0;flex:1;overflow:hidden;padding-left:0;background:#0b0c11}
+.lineNumbers{position:absolute;left:0;top:0;bottom:0;z-index:3;width:48px;padding:14px 10px 90px 0;overflow:hidden;text-align:right;pointer-events:none;user-select:none;color:#59606d;background:#0b0c11;border-right:1px solid #20242d;font:18px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+.highlightWrap{position:absolute;left:48px;right:0;top:0;bottom:0;overflow:hidden}
+.highlightWrap pre,#code{position:absolute;inset:0;margin:0;width:100%;height:100%;padding:14px 18px 100px;border:0;outline:0;font:18px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;tab-size:4;overflow:auto}
+.highlightWrap pre{z-index:0;pointer-events:none;color:#d7dae0;background:#0b0c11}
+#code{z-index:1;resize:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#f2f4f7;}
+#code::selection{background:rgba(80,120,160,.45);color:transparent;-webkit-text-fill-color:transparent}
+.syn-comment{color:#6a9955}.syn-keyword{color:#569cd6}.syn-builtin{color:#dcdcaa}.syn-string{color:#ce9178}.syn-number{color:#b5cea8}.syn-def{color:#dcdcaa}.syn-decorator{color:#c586c0}.syn-op{color:#d4d4d4}.syn-bool{color:#569cd6}.syn-self{color:#9cdcfe}
+@media(max-width:700px){
+ .lineNumbers{width:42px;padding:12px 8px 80px 0;font-size:16px;line-height:1.6}
+ .highlightWrap{left:42px}
+ .highlightWrap pre,#code{padding:12px 14px 90px;font-size:16px;line-height:1.6}
+}
+</style>
+
+
+<style id="kruthi-keyboard-layout">
+/* Compact horizontal vocabulary rows with clear subheadings */
+.vocab{
+  display:flex;flex-direction:column;gap:5px;height:100%;overflow:hidden;
+}
+.vocabTitle{
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;
+}
+.vocabTitle::-webkit-scrollbar{display:none}
+.vocabTitle button{
+  flex:0 0 auto;height:36px;padding:0 10px;border:0;border-radius:7px;
+  background:#191c24;color:#a9adb7;font-size:12px;font-weight:700;
+}
+.vocabTitle button.active{background:#8faed0;color:#111820}
+.vocabSub{
+  flex:0 0 auto;color:#777e8b;font-size:10px;letter-spacing:1.4px;
+  padding:2px 2px 0;text-align:left;
+}
+.vocabWords{
+  flex:1;overflow:auto;display:flex;flex-direction:row;flex-wrap:wrap;
+  align-content:flex-start;align-items:flex-start;gap:5px;
+  padding:1px 1px 3px;
+}
+.vocabWords button{
+  flex:0 0 auto;height:34px;padding:0 10px;border:0;border-radius:7px;
+  background:#1a1d25;color:#d4d6dd;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;
+  white-space:nowrap;
+}
+.vocabWords button:active{background:#303541;transform:scale(.97)}
+@media(max-width:700px){
+ .vocabTitle{gap:1vw}
+ .vocabTitle button{height:5.4vw;padding:0 1.8vw;font-size:2vw}
+ .vocabSub{font-size:1.8vw;padding-top:.5vw}
+ .vocabWords{gap:.8vw}
+ .vocabWords button{height:5.5vw;padding:0 1.8vw;font-size:2vw;border-radius:1.1vw}
+}
+</style>
+
+
+<style id="vscode-editor-upgrade">
+/* VS Code-style code editor area */
+.editor{
+  position:relative;
+  background:#1e1e1e;
+  border-top:1px solid #111318;
+  border-bottom:1px solid #111318;
+}
+.codeBox{
+  flex:1;
+  min-height:0;
+  background:#1e1e1e;
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.gutter{
+  height:100%;
+  width:52px;min-width:52px;
+  background:#1e1e1e;
+  border-right:0;
+  color:#858585;
+  padding:38px 12px 80px 0;
+  font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+.highlightWrap{
+  min-width:0;
+  background:#1e1e1e;
+}
+.highlightWrap pre,#code{
+  min-width:0;
+  padding:38px 18px 90px;
+  font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  tab-size:4;
+  background:#1e1e1e;
+}
+.highlightWrap pre{color:#d4d4d4}
+#code{caret-color:#ffffff}
+#code::selection{background:#264f78;color:transparent;-webkit-text-fill-color:transparent}
+/* VS Code-like syntax palette */
+.syn-comment{color:#6a9955}
+.syn-keyword{color:#569cd6}
+.syn-builtin{color:#4ec9b0}
+.syn-string{color:#ce9178}
+.syn-number{color:#b5cea8}
+.syn-def{color:#dcdcaa}
+.syn-decorator{color:#d7ba7d}
+.syn-op{color:#d4d4d4}
+.syn-bool{color:#569cd6}
+.syn-self{color:#9cdcfe}
+/* Compact editor chrome */
+.vscode-editor-title{
+  position:absolute;top:0;left:0;right:0;z-index:4;
+  height:28px;min-height:28px;display:flex;align-items:center;
+  padding:0 12px;background:#181818;color:#8b8b8b;
+  border-bottom:1px solid #2a2a2a;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.vscode-editor-title b{color:#cccccc;font-weight:500}
+.lineNumbers{display:none !important}
+@media(max-width:700px){
+  .gutter{width:45px;min-width:45px;padding:36px 9px 75px 0;font-size:12px;line-height:1.6}
+  .highlightWrap{min-width:0}
+  .highlightWrap pre,#code{min-width:0;padding:36px 14px 80px;font-size:13px;line-height:1.6}
+  .editor{min-height:0}
+}
+</style>
+
+
+<style id="clean-python-editor">
+/* Clean VS Code-like Python editor */
+.editor{background:#1e1e1e;display:flex;flex-direction:column;min-height:230px;border:1px solid #2b2d31;border-radius:8px;margin:8px;overflow:hidden;position:relative}
+.vscode-editor-title{height:38px;min-height:38px;display:flex;align-items:center;padding:0 14px;background:#18191c;border-bottom:1px solid #303238;color:#c9c9c9;font:13px/1 ui-sans-serif,system-ui,sans-serif}
+.vscode-editor-title span:first-child:before{content:'🐍';margin-right:7px;font-size:13px}
+.gutter{display:none!important}
+.codeBox{flex:1;min-height:0;position:relative;overflow:hidden;padding-left:52px;background:#1e1e1e}
+.lineNumbers{position:absolute;left:0;top:0;bottom:0;width:52px;padding:14px 12px 90px 0;background:#181818;border-right:1px solid #292929;color:#858585;text-align:right;font:16px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow:hidden;pointer-events:none;z-index:3}
+.highlightWrap{position:relative;width:100%;height:100%;overflow:hidden;background:#1e1e1e}
+.highlightWrap pre,#code{position:absolute;inset:0;margin:0;width:100%;height:100%;padding:14px 18px 90px;border:0;outline:0;font:16px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;tab-size:4;overflow:auto;scrollbar-width:thin}
+.highlightWrap pre{z-index:0;pointer-events:none;color:#d4d4d4;background:#1e1e1e}
+#code{z-index:1;resize:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:#ffffff;selection-color:#fff}
+#code::selection{background:rgba(38,79,120,.8);color:transparent;-webkit-text-fill-color:transparent}
+.syn-comment{color:#6a9955}.syn-keyword{color:#569cd6}.syn-builtin{color:#4ec9b0}.syn-string{color:#ce9178}.syn-number{color:#b5cea8}.syn-def{color:#dcdcaa}.syn-decorator{color:#c586c0}.syn-op{color:#d4d4d4}.syn-bool{color:#569cd6}.syn-self{color:#9cdcfe}
+@media(max-width:700px){.editor{margin:5px;border-radius:6px}.vscode-editor-title{height:34px;min-height:34px;padding:0 10px;font-size:12px}.codeBox{padding-left:43px}.lineNumbers{width:43px;padding:12px 9px 70px 0;font-size:15px}.highlightWrap pre,#code{padding:12px 12px 70px;font-size:15px;line-height:1.55}}
+</style>
+
+<style id="clean-vscode-editor">
+/* Clean VS Code-like coding surface — no editor title/name */
+.editor{background:#1e1e1e!important;border:0!important;margin:0!important;border-radius:0!important}
+.codeBox{padding:0!important;background:#1e1e1e!important;position:relative!important;overflow:hidden!important}
+.lineNumbers{display:block!important;left:0!important;top:0!important;bottom:0!important;width:58px!important;padding:12px 14px 100px 0!important;background:#1e1e1e!important;border:0!important;color:#858585!important;text-align:right!important;font:16px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;white-space:pre!important;overflow:hidden!important;z-index:5!important}
+.highlightWrap{left:58px!important;right:0!important;top:0!important;bottom:0!important;position:absolute!important;background:#1e1e1e!important;overflow:hidden!important}
+.highlightWrap pre,#code{padding:12px 24px 100px 12px!important;margin:0!important;border:0!important;outline:0!important;font:16px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace!important;letter-spacing:0!important;white-space:pre!important;tab-size:4!important;background:#1e1e1e!important;min-width:100%!important}
+.highlightWrap pre{z-index:1!important;color:#d4d4d4!important;pointer-events:none!important;overflow:hidden!important;overflow-wrap:normal!important}
+#code{z-index:2!important;resize:none!important;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:#aeffcf!important;overflow:auto!important;overflow-wrap:normal!important}
+#code::selection{background:rgba(38,79,120,.8)!important;color:transparent!important;-webkit-text-fill-color:transparent!important}
+/* subtle editor grid/indent-guide feel */
+.highlightWrap pre{background-color:#1e1e1e!important;background-image:linear-gradient(to right,rgba(255,255,255,.035) 1px,transparent 1px)!important;background-size:4ch 100%!important;background-position:12px 0!important}
+@media(max-width:700px){
+ .lineNumbers{width:43px!important;padding:10px 8px 80px 0!important;font-size:15px!important;line-height:1.65!important}
+ .highlightWrap{left:43px!important}
+ .highlightWrap pre,#code{padding:10px 14px 80px 10px!important;font-size:15px!important;line-height:1.65!important}
+}
+</style>
+
+
+<style id="heart-logo-style">
+.heart-logo{
+  width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  font-size:25px;color:#ff6f91;background:#1b2430;border-radius:10px;
+  line-height:1;
+}
+@media(max-width:700px){.heart-logo{width:40px;height:40px;font-size:24px}}
+</style>
+
+
+<style id="final-real-editor-fix">
+/* Final real-editor layout: fixed line-number gutter + scrollable code surface. */
+.editor{display:flex!important;flex-direction:column!important;min-height:0!important;height:100%!important;margin:0!important;border:0!important;border-radius:0!important;background:#1e1e1e!important;overflow:hidden!important}
+.codeBox{display:flex!important;flex:1 1 auto!important;min-height:0!important;width:100%!important;height:100%!important;padding:0!important;position:relative!important;overflow:hidden!important;background:#1e1e1e!important}
+.lineNumbers{display:block!important;position:relative!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important;height:100%!important;left:auto!important;top:auto!important;bottom:auto!important;padding:12px 10px 100px 0!important;margin:0!important;box-sizing:border-box!important;background:#1e1e1e!important;border-right:1px solid #2b2b2b!important;color:#858585!important;text-align:right!important;font:16px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;white-space:pre!important;overflow:hidden!important;pointer-events:none!important;user-select:none!important;z-index:10!important}
+.highlightWrap{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;flex:1 1 auto!important;width:auto!important;height:100%!important;min-width:0!important;overflow:hidden!important;background:#1e1e1e!important}
+.highlightWrap pre,#code{position:absolute!important;left:0!important;top:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important;margin:0!important;padding:12px 16px 100px!important;font:16px/1.65 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;white-space:pre!important;tab-size:4!important;box-sizing:border-box!important}
+.highlightWrap pre{z-index:1!important;overflow:hidden!important;background:#1e1e1e!important;color:#d4d4d4!important}
+#code{z-index:2!important;overflow:auto!important;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:#aeffcf!important}
+@media(max-width:700px){
+ .lineNumbers{flex-basis:48px!important;width:48px!important;min-width:48px!important;padding:10px 9px 80px 0!important;font-size:15px!important;line-height:1.65!important}
+ .highlightWrap pre,#code{padding:10px 12px 80px!important;font-size:15px!important;line-height:1.65!important}
+}
+</style>
+
+
+<style id="share-modal-style">
+.shareChoiceBox{max-width:430px}.shareTitle{margin:0 0 6px;font-size:20px}.shareSub{margin:0 0 16px;color:#8e939e;font-size:13px;line-height:1.45}.shareChoices{display:grid;gap:9px}.shareChoice{width:100%;padding:13px 14px;border:1px solid #303541;border-radius:12px;background:#191c24;color:#f2f4f8;text-align:left;font:inherit;cursor:pointer}.shareChoice strong{display:block;font-size:15px}.shareChoice small{display:block;color:#8e939e;margin-top:3px}.shareChoice:active{transform:scale(.985)}.shareCancel{margin-top:10px;width:100%}.shareNote{font-size:11px;color:#737783;margin-top:10px;line-height:1.4}
+</style>
+
+<style id="kruthi-pro-features-css">
+.editorTools{height:42px;min-height:42px;display:flex;gap:7px;align-items:center;padding:5px 8px;background:#101219;border-bottom:1px solid #282b35;overflow-x:auto;scrollbar-width:none}
+.editorTools::-webkit-scrollbar{display:none}
+.editorTools button{height:32px;min-width:38px;padding:0 10px;border-radius:8px;background:#1b1e26;color:#cfd2da;font-size:13px;white-space:nowrap}
+.editorTools button:active{background:#303541}
+.suggestBar{height:34px;min-height:34px;display:flex;gap:6px;align-items:center;padding:3px 7px;background:#0e1016;border-top:1px solid #22252d;overflow-x:auto;scrollbar-width:none}
+.suggestBar::-webkit-scrollbar{display:none}
+.suggestBar button{height:28px;padding:0 10px;border-radius:7px;background:#20242d;color:#bcd4ea;font:13px ui-monospace,monospace;white-space:nowrap}
+.problemBox{display:none;flex:1;overflow:auto;padding:12px 14px;font:14px/1.5 ui-monospace,monospace}
+.problemBox.show{display:block}
+.problemItem{padding:10px 11px;margin-bottom:8px;border:1px solid #4b3035;background:#21171a;border-radius:9px;color:#ffb0b0}
+.problemItem b{color:#fff}
+.problemItem button{margin-top:7px;padding:6px 9px;border-radius:7px;background:#333743;color:#fff}
+.folderTitle{margin:12px 0 6px;color:#8c919c;font-size:12px;letter-spacing:1.5px}
+.featureNote{font-size:12px;color:#7e8490;margin-top:9px;line-height:1.4}
+@media(max-width:700px){.editorTools{height:8vw;min-height:8vw;padding:.7vw 1.1vw;gap:1vw}.editorTools button{height:6.2vw;min-width:8vw;padding:0 1.8vw;font-size:2.1vw}.suggestBar{height:6.5vw;min-height:6.5vw;padding:.5vw 1vw;gap:1vw}.suggestBar button{height:5.3vw;padding:0 2vw;font-size:2.05vw}.problemBox{padding:1.7vw 2vw;font-size:2.2vw}}
+</style>
+
+</head>
+<body>
+
+<div id="kruthiSplash" class="kruthiSplash">
+  <div class="splashGlow"></div>
+  <div class="splashLogo">♥</div>
+  <div class="splashName">kruthi.py</div>
+  <div class="splashTag">Python • Code • Create</div>
+  <button id="startKruthi" class="startKruthi">START</button>
+  <div class="splashHint">Tap START to open your Python workspace</div>
+</div>
+
+<div class="app">
+<header class="top">
+ <button class="square" id="menuBtn">☰</button>
+ <div class="drop heart-logo" aria-label="Love">♥</div>
+ <div class="name appName" id="name" aria-label="kruthi.py">kruthi.py</div>
+ <button class="square shareTop" id="shareTop" title="Share current file">↗</button>
+ <button class="run" id="run">▶ <span>Run</span></button>
+ <button class="stop" id="stop">■</button>
+ <button class="square save" id="save">▣</button>
+ <button class="square kbd" id="focusKbd">⌨</button>
+ <button class="square sun" id="theme">☼</button>
+</header>
+<div class="tabs" id="tabs"></div>
+
+<div class="main">
+ <section class="editor">
+  <div class="codeBox" id="codeBox"><div class="lineNumbers" id="lineNumbers" aria-hidden="true">1</div><div class="highlightWrap"><pre id="highlight" aria-hidden="true"></pre><textarea id="code" inputmode="none" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea></div></div>
+ </section>
+ <section class="panel">
+  <div class="pheads"><button class="phead active" id="term">TERMINAL</button><button class="phead" id="prob">PROBLEMS</button></div>
+  <div class="inputLine" id="inputLine"><input id="stdin" placeholder="Program is waiting for input()…"><button class="send" id="send">Send</button></div>
+  <pre class="console" id="console">Downloading Python…</pre>
+ </section>
+</div>
+<div class="keyboard" id="keyboard"></div>
+</div>
+
+<div class="drawerMask" id="mask"><aside class="drawer">
+ <h2>☰ kruthi.py</h2>
+ <button class="mi" id="new">＋ New file</button>
+ <button class="mi" id="saveMenu">▣ Save / Download</button>
+ <button class="mi" id="shareMenu">↗ Share current file</button>
+ <button class="mi" id="files">📁 Files</button>
+ <button class="mi" id="history">🕘 History</button>
+ <button class="mi" id="clearEditor">🧹 Clear editor</button>
+ <button class="mi" id="clearAll">🗑 Clear ALL</button>
+ <div class="sec">FILES</div><div id="fileList"></div>
+ <div class="sec">HISTORY</div><div id="historyList"></div>
+</aside></div>
+
+<div class="dialog" id="dialog"><div class="box">
+ <h3>New Python file</h3><input class="inp" id="newName" placeholder="example.py">
+ <div class="actions"><button class="act" id="cancel">Cancel</button><button class="act primary" id="create">Create</button></div>
+</div></div>
+
+<div class="dialog" id="renameDialog"><div class="box">
+ <h3>Rename Python file</h3><input class="inp" id="renameName" placeholder="untitled.py">
+ <div class="actions"><button class="act" id="renameCancel">Cancel</button><button class="act primary" id="renameSave">Rename</button></div>
+</div></div>
+
+
+<div class="dialog" id="shareDialog"><div class="box shareChoiceBox">
+ <h3 class="shareTitle">Share Python file</h3>
+ <p class="shareSub" id="shareFileLabel">Choose how you want to share the current file.</p>
+ <div class="shareChoices">
+  <button class="shareChoice" id="sharePythonFile"><strong>📄 Share Python File</strong><small>Share the .py file with WhatsApp, Telegram, Gmail, Drive and more.</small></button>
+  <button class="shareChoice" id="sharePythonCode"><strong>📝 Share Code</strong><small>Share the Python code as text.</small></button>
+  <button class="shareChoice" id="copyPythonCode"><strong>📋 Copy Code</strong><small>Copy the complete code to your clipboard.</small></button>
+ </div>
+ <div class="shareNote" id="shareNote"></div>
+ <button class="act shareCancel" id="shareCancel">Cancel</button>
+</div></div>
+<script>
+/* kruthi.py: UI is intentionally close to the supplied reference image. */
+const $=x=>document.getElementById(x);
+const starter=`# kruthi.py — press Run (or Ctrl/Cmd+Enter)
+def fibonacci(n: int) -> list[int]:
+    a, b = 0, 1
+    out: list[int] = []
+    for _ in range(n):
+        out.append(a)
+        a, b = b, a + b
+    return out
+
+print(fibonacci(10))
+`;
+
+let files={},history=[],current="untitled.py",py=null,worker=null,running=false,keyboardMode="ABC",pendingInput=null;
+try{files=JSON.parse(localStorage.pyflowFiles||"{}")}catch{}
+try{history=JSON.parse(localStorage.pyflowHistory||"[]")}catch{}
+if(!Object.keys(files).length)files[current]="";
+if(!files[current])current=Object.keys(files)[0];
+$("code").value=files[current];
+
+function persist(){files[current]=$("code").value;localStorage.pyflowFiles=JSON.stringify(files);localStorage.pyflowHistory=JSON.stringify(history.slice(0,100))}
+function lines(){const c=$("code"), l=$("lineNumbers"); if(!c||!l)return; const n=Math.max(1,c.value.split("\n").length); l.textContent=Array.from({length:n},(_,i)=>i+1).join("\n"); l.scrollTop=c.scrollTop}
+function tabs(){$("tabs").innerHTML=Object.keys(files).map(n=>`<button class="tab ${n===current?"active":""}" data-f="${encodeURIComponent(n)}">${esc(n)}</button>`).join("")}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function openFile(n){persist();current=n;$("code").value=files[n]||"";tabs();lines();updateHighlight();closeDrawer();$("code").focus()}
+$("tabs").onclick=e=>{let b=e.target.closest(".tab");if(b)openFile(decodeURIComponent(b.dataset.f))};
+$("code").addEventListener("input",()=>{lines();persist()});
+$("code").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("code").scrollTop});
+
+function saveDownload(){
+ persist();let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([files[current]],{type:"text/x-python"}));a.download=current;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$("save").onclick=saveDownload;$("saveMenu").onclick=()=>{saveDownload();closeDrawer()};
+
+function drawer(){renderDrawer();$("mask").classList.add("open")}
+function closeDrawer(){$("mask").classList.remove("open")}
+$("menuBtn").onclick=drawer;$("mask").onclick=e=>{if(e.target.id==="mask")closeDrawer()};
+
+function renderDrawer(){
+ let fl=Object.keys(files);$("fileList").innerHTML=fl.length?fl.map(n=>`<div class="card"><div class="ct"><span class="cn">📄 ${esc(n)}</span><button class="sm op" data-f="${encodeURIComponent(n)}">Open</button><button class="sm ren" data-f="${encodeURIComponent(n)}">Rename</button><button class="sm shareFile" data-f="${encodeURIComponent(n)}">Share</button><button class="sm del" data-f="${encodeURIComponent(n)}">×</button></div></div>`).join(""):`<div class="empty">No files</div>`;
+ $("historyList").innerHTML=history.length?history.map((h,i)=>`<div class="card"><div class="ct"><span class="cn">${h.error?"❌":"▶"} ${esc(h.file)}</span><button class="sm load" data-i="${i}">Load</button><button class="sm del rh" data-i="${i}">×</button></div><div style="font-size:11px;color:#737783;margin-top:6px">${esc(h.time)}</div></div>`).join(""):`<div class="empty">No run history</div>`;
+}
+$("fileList").onclick=async e=>{let b=e.target.closest("button");if(!b)return;let n=decodeURIComponent(b.dataset.f);
+ if(b.classList.contains("op")){openFile(n);return;}
+ if(b.classList.contains("ren")){startRename(n);return;}
+ if(b.classList.contains("shareFile")){openShareDialog(n);return;}
+ if(b.classList.contains("del")){if(Object.keys(files).length===1)return alert("Keep at least one file.");delete files[n];if(current===n)current=Object.keys(files)[0];$("code").value=files[current];persist();tabs();lines();updateHighlight();renderDrawer();}};
+$("historyList").onclick=e=>{let b=e.target.closest("button");if(!b)return;let i=+b.dataset.i;if(b.classList.contains("load")){let h=history[i];current=h.file;if(!files[current])files[current]=h.code;$("code").value=h.code;persist();tabs();lines();updateHighlight();closeDrawer()}else{history.splice(i,1);persist();renderDrawer()}};
+
+function getShareData(n=current){
+  const code=String(n===current ? $("code").value : (files[n]??""));
+  const filename=(n||"untitled").toLowerCase().endsWith(".py")?(n||"untitled.py"):(n||"untitled")+".py";
+  return {code,filename,title:"Python code — "+filename};
+}
+function openShareDialog(n=current){
+  window.shareTarget=n;
+  const d=getShareData(n);
+  $("shareFileLabel").textContent="Share “"+d.filename+"” directly from your phone.";
+  const https=location.protocol==="https:";
+  $("shareNote").textContent=https?"Native phone sharing is available on supported browsers.":"You are opening the app as a downloaded content:// file. Native Android sharing may be unavailable until the app is opened from GitHub Pages/HTTPS.";
+  $("shareDialog").classList.add("open");
+}
+async function shareAsFile(){
+  const d=getShareData(window.shareTarget||current);
+  try{
+    const f=new File([d.code],d.filename,{type:"text/x-python"});
+    if(typeof navigator.share!=="function") throw new Error("share-unavailable");
+    if(typeof navigator.canShare==="function" && !navigator.canShare({files:[f]})) throw new Error("file-share-unavailable");
+    await navigator.share({title:d.title,text:d.code,files:[f]});
+    $("shareDialog").classList.remove("open");
+  }catch(e){
+    if(e && e.name==="AbortError") return;
+    try{
+      const blob=new Blob([d.code],{type:"text/x-python;charset=utf-8"});
+      const url=URL.createObjectURL(blob); const a=document.createElement("a");
+      a.href=url; a.download=d.filename; a.style.display="none"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      $("shareNote").textContent="Your browser does not allow native file sharing here, so the .py file was downloaded. Open the app from GitHub Pages/HTTPS to use the phone Share menu.";
+    }catch(err){ $("shareNote").textContent="File sharing is unavailable in this browser."; }
+  }
+}
+async function shareAsText(){
+  const d=getShareData(window.shareTarget||current);
+  try{
+    if(typeof navigator.share!=="function") throw new Error("share-unavailable");
+    await navigator.share({title:d.title,text:d.code});
+    $("shareDialog").classList.remove("open");
+  }catch(e){
+    if(e && e.name==="AbortError") return;
+    try{ await navigator.clipboard.writeText(d.code); $("shareNote").textContent="Code copied to clipboard. Native text sharing is unavailable in this browser."; }
+    catch(err){ $("shareNote").textContent="Text sharing is unavailable in this browser."; }
+  }
+}
+async function copyShareCode(){
+  const d=getShareData(window.shareTarget||current);
+  try{ await navigator.clipboard.writeText(d.code); $("shareNote").textContent="Code copied successfully."; }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=d.code; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); $("shareNote").textContent="Code copied successfully.";
+  }
+}
+
+function startRename(n=current){
+  $("renameName").value=n.replace(/\.py$/i,"");
+  $("renameDialog").classList.add("open");
+  setTimeout(()=>{$("renameName").focus();$("renameName").select()},50);
+}
+function doRename(){
+  // Always save the current editor before renaming so the first file works too.
+  files[current] = $("code").value;
+  let n=$("renameName").value.trim();
+  if(!n){ alert("Enter a file name."); return; }
+  n=n.replace(/\.py$/i,"").trim();
+  n=n.replace(/[\\/:*?\"<>|]/g,"");
+  if(!n){ alert("Enter a valid file name."); return; }
+  n += ".py";
+  if(n!==current && Object.prototype.hasOwnProperty.call(files,n)){
+    alert("A file with that name already exists."); return;
+  }
+  if(n===current){ $("renameDialog").classList.remove("open"); return; }
+  const code=files[current] || "";
+  delete files[current];
+  files[n]=code;
+  current=n;
+  localStorage.pyflowFiles=JSON.stringify(files);
+  tabs();
+  lines();
+  updateHighlight();
+  renderDrawer();
+  persist();
+  $("renameDialog").classList.remove("open");
+  $("code").focus();
+}
+
+$("shareTop").onclick=()=>shareFile(current);
+$("shareMenu").onclick=()=>{shareFile(current);closeDrawer()};
+$("renameCancel").onclick=()=>$("renameDialog").classList.remove("open");
+$("renameSave").onclick=doRename;
+$("renameName").addEventListener("keydown",e=>{if(e.key==="Enter")doRename();if(e.key==="Escape")$("renameDialog").classList.remove("open")});
+
+$("new").onclick=()=>{$("newName").value="";$("dialog").classList.add("open");setTimeout(()=>$("newName").focus(),50)};
+$("cancel").onclick=()=>$("dialog").classList.remove("open");
+$("create").onclick=()=>{
+ let n=$("newName").value.trim()||"untitled.py";if(!n.endsWith(".py"))n+=".py";
+ if(files[n])return openFile(n);
+ files[n]="";current=n;$('code').value="";$('name').textContent=n;persist();tabs();lines();updateHighlight();$('dialog').classList.remove('open');closeDrawer();$('code').focus();
+};
+$("clearEditor").onclick=()=>{
+ if(confirm("Clear current editor?")){
+  $("code").value="";
+  persist();
+  lines();
+  if(typeof updateHighlight === "function") updateHighlight();
+  $("code").focus();
+ }
+};
+$("clearAll").onclick=()=>{if(confirm("Delete ALL files and history?")){files={ "untitled.py":""};history=[];current="untitled.py";$("code").value="";persist();tabs();lines();updateHighlight();renderDrawer()}};
+$("files").onclick=renderDrawer;$("history").onclick=renderDrawer;
+
+function makeWorker(){
+ const src=`
+ importScripts('https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js');
+ let p;
+ async function main(){
+   p=await loadPyodide({indexURL:'https://cdn.jsdelivr.net/pyodide/v0.28.3/full/'});
+   self.postMessage({type:'ready'});
+ }
+ self.onmessage=async(e)=>{
+   if(!p)return;
+   if(e.data.type==='run'){
+     try{
+       p.setStdout({batched:s=>postMessage({type:'out',s})});
+       p.setStderr({batched:s=>postMessage({type:'err',s})});
+       p.globals.set('PYFLOW_INPUT', (q)=>{postMessage({type:'input',q:String(q||'')}); return promptInput;});
+       let promptInput='';
+       p.runPython("import builtins; builtins.input=lambda prompt='': PYFLOW_INPUT(prompt)");
+       await p.runPythonAsync(e.data.code);
+       postMessage({type:'done'});
+     }catch(err){postMessage({type:'error',s:String(err)})}
+   }
+   if(e.data.type==='input'){promptInput=e.data.value; /* synchronous input is difficult in a worker; see UI fallback */}
+ };
+ main();
+ `;
+ const blob=new Blob([src],{type:"application/javascript"});worker=new Worker(URL.createObjectURL(blob));
+ worker.onmessage=e=>{
+   if(e.data.type==="ready"){py=true;$("console").textContent="Python ready ✓\\nPress Run ▶";$("console").className="console ok"}
+   if(e.data.type==="out"){$("console").textContent+=e.data.s}
+   if(e.data.type==="err"){$("console").textContent+=e.data.s;$("console").className="console err"}
+   if(e.data.type==="input"){$("inputLine").classList.add("show");$("stdin").focus();pendingInput=true}
+   if(e.data.type==="done"){finishRun(false)}
+   if(e.data.type==="error"){finishRun(true,e.data.s)}
+ };
+ worker.onerror=()=>{finishRun(true,"Python worker failed. Reload the page to restart it.")};
+}
+function finishRun(err,msg){
+ running=false;$("run").disabled=false;$("inputLine").classList.remove("show");
+ if(msg)$("console").textContent=msg;
+ $("console").className=err?"console err":"console ok";
+ let src=$("code").value;history.unshift({file:current,code:src,out:$("console").textContent,time:new Date().toLocaleString(),error:err});persist();renderDrawer()
+}
+// Remove accidental copied line numbers before Python executes pasted code.
+function stripAccidentalLineNumbers(text){
+  const raw=String(text||'').replace(/\r\n?/g,'\n');
+  const arr=raw.split('\n');
+  if(arr.length<2)return raw;
+  const out=[];
+  for(let i=0;i<arr.length;i++){
+    const m=arr[i].match(/^\s*(\d+)\s?(.*)$/);
+    if(!m || Number(m[1])!==i+1)return raw;
+    out.push(m[2]);
+  }
+  return out.join('\n');
+}
+$('code').addEventListener('paste',e=>{
+  const text=(e.clipboardData||window.clipboardData)?.getData('text');
+  if(!text)return;
+  const cleaned=stripAccidentalLineNumbers(text);
+  if(cleaned===text)return;
+  e.preventDefault();
+  const c=$("code");
+  c.setRangeText(cleaned,c.selectionStart,c.selectionEnd,'end');
+  c.dispatchEvent(new Event('input',{bubbles:true}));
+});
+
+$("run").onclick=async()=>{
+ if(running)return;
+ if(!py){$("console").textContent="Python is still downloading…";return}
+ let codeToRun=$("code").value;
+ const cleaned=stripAccidentalLineNumbers(codeToRun);
+ if(cleaned!==codeToRun){
+   codeToRun=cleaned;
+   $("code").value=codeToRun;
+   persist();
+   lines();
+   updateHighlight();
+ }
+ running=true;$("run").disabled=true;$("console").textContent="";$("console").className="console";pendingInput=null;
+ worker.postMessage({type:"run",code:codeToRun})
+};
+$("stop").onclick=()=>{
+ if(!running){$("console").textContent="Nothing is running.";return}
+ worker.terminate();running=false;$("run").disabled=false;$("inputLine").classList.remove("show");$("console").textContent+="\\n\\n■ Stopped.";$("console").className="console warn";makeWorker()
+};
+$("send").onclick=()=>{if(!pendingInput)return;let v=$("stdin").value;$("stdin").value="";$("inputLine").classList.remove("show");worker.postMessage({type:"input",value:v});pendingInput=false};
+$("stdin").onkeydown=e=>{if(e.key==="Enter")$("send").click()};
+
+$("term").onclick=()=>{$("term").classList.add("active");$("prob").classList.remove("active");$("console").textContent=$("console").textContent||"Terminal ready."};
+$("prob").onclick=()=>{$("prob").classList.add("active");$("term").classList.remove("active");if($("console").classList.contains("err"))$("console").textContent="Problem found. Check the traceback above.";else $("console").textContent="✓ No problems in the last run."};
+
+$("theme").onclick=()=>document.body.classList.toggle("light");
+$("focusKbd").onclick=()=>{$("code").focus();$("codeBox").scrollTop=$("codeBox").scrollTop};
+
+
+const symbol1=["(",")","[","]","{","}",":","\"\"","''","Tab","Indent","Dedent"];
+const symbol2=["=","+","-","*","/","//","%","==","!=","<",">","<=",">=","_","@",",",";","."];
+const abc=[["q","w","e","r","t","y","u","i","o","p"],["a","s","d","f","g","h","j","k","l"],["⇧","z","x","c","v","b","n","m","⌫"]];
+const nums=["1","2","3","4","5","6","7","8","9","0","(",")","[","]","{","}","@","#","$","%","&","|","^","~","\\","`","?","!"];
+const pythonKeywords=["def","if","else","elif","for","while","in","import","from","return","print","class","try","except","with","as","and","or","not","is","None","True","False","break","continue","pass","raise","lambda","yield","async","await","assert","del","global","nonlocal","match","case"];
+const builtins=["print","input","len","range","int","float","str","list","dict","set","tuple","bool","sum","min","max","abs","round","enumerate","zip","map","filter","sorted","reversed","open","type","isinstance","issubclass","object","super","any","all","repr","format","ord","chr","bin","hex","oct","pow","dir","help","eval","exec","getattr","setattr","hasattr","delattr","vars","id","hash","iter","next","property","classmethod","staticmethod","callable","bytes","bytearray","complex","memoryview","frozenset"];
+const types=["str","int","float","bool","list","tuple","dict","set","range","None","True","False","bytes","bytearray","complex","frozenset","slice","object","type","Ellipsis"];
+const exceptions=["BaseException","Exception","ArithmeticError","AssertionError","AttributeError","EOFError","FileExistsError","FileNotFoundError","FloatingPointError","ImportError","IndexError","KeyError","KeyboardInterrupt","LookupError","MemoryError","NameError","NotImplementedError","OSError","OverflowError","RuntimeError","StopIteration","SyntaxError","IndentationError","TabError","SystemError","TimeoutError","TypeError","UnboundLocalError","UnicodeError","UnicodeDecodeError","UnicodeEncodeError","UnicodeTranslateError","ValueError","ZeroDivisionError","Warning","UserWarning","DeprecationWarning","RuntimeWarning"];
+const methods=["append","extend","insert","pop","remove","clear","sort","reverse","copy","count","index","add","update","get","items","keys","values","setdefault","popitem","discard","union","intersection","difference","split","join","strip","replace","find","startswith","endswith","lower","upper","title","format","isdigit","isalpha","isalnum","isspace","capitalize","casefold","center","ljust","rjust","lstrip","rstrip","partition","rpartition","rsplit","splitlines","swapcase","translate","zfill"];
+const stdlib=["abc","argparse","array","ast","asyncio","base64","bisect","calendar","cmath","collections","concurrent","contextlib","copy","csv","dataclasses","datetime","decimal","difflib","email","enum","functools","gc","getpass","glob","gzip","hashlib","heapq","html","http","importlib","inspect","io","itertools","json","keyword","logging","math","multiprocessing","numbers","operator","os","pathlib","pickle","platform","pprint","queue","random","re","secrets","shutil","signal","socket","sqlite3","statistics","string","subprocess","sys","tempfile","textwrap","threading","time","timeit","tkinter","traceback","typing","unittest","urllib","uuid","venv","warnings","weakref","xml","zipfile"];
+const popular=["numpy","pandas","matplotlib","scipy","sympy","requests","flask","django","fastapi","bs4","seaborn","plotly","openpyxl","PIL","cv2","sklearn","tensorflow","torch","pygame","streamlit","gradio"];
+const operators=["+","-","*","**","/","//","%","@","<<",">>","&","|","^","~","<",">","<=",">=","==","!=","=","+=","-=","*=","/=","//=","%=","**=","@=","&=","|=","^=","<<=",">>=","->",":","..."];
+const literals=["True","False","None","...","0","1","-1","0.0","1e3","0xFF","0b1010","0o755","\"text\"","'text'","f\"{x}\"","r\"raw\"","b\"bytes\""];
+const dunders=["__name__","__main__","__init__","__str__","__repr__","__len__","__iter__","__next__","__getitem__","__setitem__","__delitem__","__enter__","__exit__","__call__","__class__","__dict__","__file__","__package__","__module__","__annotations__"];
+const commonText=["print","input","variable","function","class","object","module","package","import","comment","string","integer","float","boolean","list","tuple","set","dictionary","loop","condition","exception","file","folder","path","JSON","CSV","API"];
+let vocabMode="KEYWORDS";
+
+function insert(t){const c=$("code"),s=c.selectionStart,e=c.selectionEnd,v=c.value;c.value=v.slice(0,s)+t+v.slice(e);c.selectionStart=c.selectionEnd=s+t.length;c.focus();c.dispatchEvent(new Event("input"))}
+function backspace(){const c=$("code"),s=c.selectionStart,e=c.selectionEnd;if(s!==e)return insert("");if(s>0){c.value=c.value.slice(0,s-1)+c.value.slice(s);c.selectionStart=c.selectionEnd=s-1;c.dispatchEvent(new Event("input"))}}
+let holdTimer,holdInterval;
+function holdStart(t){if(t==="⌫"){backspace();holdTimer=setTimeout(()=>holdInterval=setInterval(backspace,65),430)}}
+function holdStop(){clearTimeout(holdTimer);clearInterval(holdInterval)}
+function dedent(){const c=$("code"),s=c.selectionStart,ls=c.value.lastIndexOf("\n",s-1)+1;if(c.value.slice(ls,ls+4)==="    "){c.value=c.value.slice(0,ls)+c.value.slice(ls+4);c.selectionStart=c.selectionEnd=Math.max(ls,s-4);c.dispatchEvent(new Event("input"))}}
+function key(t){if(t==="Tab"||t==="Indent")return insert("    ");if(t==="Dedent")return dedent();if(t==="⌫")return backspace();if(t==="space")return insert(" ");if(t==="↵")return insert("\n");if(t==="⇧")return;insert(t)}
+function makeKey(t,cls=""){const b=document.createElement("button");b.className="key "+cls+(t==="⌫"?" back":"")+(t==="space"?" space":"")+(t==="↵"?" enter":"")+(["Tab","Indent","Dedent"].includes(t)?" wide":"");b.textContent=t;b.onpointerdown=()=>holdStart(t);b.onpointerup=holdStop;b.onpointerleave=holdStop;b.onclick=()=>key(t);return b}
+function addRow(parent,arr){const r=document.createElement("div");r.className="krow";arr.forEach(t=>r.appendChild(makeKey(t)));parent.appendChild(r)}
+function vocabPanel(){
+ const box=document.createElement("div");box.className="vocab";
+ const cats=[
+ ["Keywords","KEYWORDS",pythonKeywords],["Built-ins","BUILTINS",builtins],["Types","TYPES",types],
+ ["Exceptions","EXCEPTIONS",exceptions],["Methods","METHODS",methods],["Std Library","STDLIB",stdlib],
+ ["Popular Libs","POPULAR",popular],["Operators","OPERATORS",operators],["Literals","LITERALS",literals],
+ ["Dunder","DUNDER",dunders],["Text","TEXT",commonText]];
+ const heads=document.createElement("div");heads.className="vocabTitle";
+ cats.forEach(c=>{const b=document.createElement("button");b.textContent=c[0];b.className=vocabMode===c[1]?"active":"";b.onclick=()=>{vocabMode=c[1];renderKeys()};heads.appendChild(b)});
+ box.appendChild(heads);
+ const selected=cats.find(c=>c[1]===vocabMode)||cats[0];
+ const title=document.createElement("div");title.className="vocabSub";title.textContent=selected[0].toUpperCase();box.appendChild(title);
+ const words=document.createElement("div");words.className="vocabWords";
+ selected[2].forEach(w=>{const b=document.createElement("button");b.textContent=w;b.onclick=()=>insert(w);words.appendChild(b)});
+ box.appendChild(words);return box;
+}
+function renderKeys(){
+ const k=$("keyboard");k.innerHTML="";addRow(k,symbol1);addRow(k,symbol2);
+ const cats=document.createElement("div");cats.className="krow";
+ [["ABC","ABC"],["123","NUM"],["Keywords","VOCAB"],["Words","VOCAB"]].forEach(x=>{const b=makeKey(x[0],"chip "+(keyboardMode===x[1]?"selected":""));b.onclick=()=>{keyboardMode=x[1];renderKeys()};cats.appendChild(b)});
+ k.appendChild(cats);
+ if(keyboardMode==="ABC"){abc.forEach(a=>addRow(k,a));addRow(k,["123","Kw","space",".","↵"])}
+ else if(keyboardMode==="NUM"){addRow(k,nums);addRow(k,["ABC","Kw","space",".","↵"])}
+ else{k.appendChild(vocabPanel());addRow(k,["ABC","123","space",".","↵"])}
+}
+
+function escHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function highlightPython(s){
+ let out="",i=0;
+ while(i<s.length){
+  if(s[i]==="#"){let j=s.indexOf("\n",i);if(j<0)j=s.length;out+='<span class="syn-comment">'+escHtml(s.slice(i,j))+"</span>";i=j;continue}
+  if(s[i]==='"'||s[i]==="'"){let q=s[i],j=i+1;while(j<s.length){if(s[j]==="\\"){j+=2;continue}if(s[j]===q){j++;break}j++}out+='<span class="syn-string">'+escHtml(s.slice(i,j))+"</span>";i=j;continue}
+  if(/\d/.test(s[i])){let m=s.slice(i).match(/^\d+(?:\.\d+)?(?:e[+-]?\d+)?/i);if(m){out+='<span class="syn-number">'+m[0]+"</span>";i+=m[0].length;continue}}
+  if(/[A-Za-z_]/.test(s[i])){let m=s.slice(i).match(/^[A-Za-z_][A-Za-z0-9_]*/)[0];let cls="";
+   if(["True","False","None","Ellipsis"].includes(m))cls="syn-bool";
+   else if(pythonKeywords.includes(m))cls="syn-keyword";
+   else if(["print","input","len","range","list","dict","set","tuple","str","int","float","bool","sum","min","max","open","enumerate","zip","map","filter","sorted","reversed","abs","all","any","super"].includes(m))cls="syn-builtin";
+   out+=cls?'<span class="'+cls+'">'+m+"</span>":m;i+=m.length;continue}
+  if("@".includes(s[i])){let m=s.slice(i).match(/^@[A-Za-z_][A-Za-z0-9_.]*/);if(m){out+='<span class="syn-decorator">'+escHtml(m[0])+"</span>";i+=m[0].length;continue}}
+  if("+-*/%=<>!&|^~:@".includes(s[i])){let m=s.slice(i).match(/^[+\-*\/%=<>!&|^~:@]+/)[0];out+='<span class="syn-op">'+escHtml(m)+"</span>";i+=m.length;continue}
+  out+=escHtml(s[i]);i++
+ }
+ return out+"\n";
+}
+function updateHighlight(){const h=$("highlight"),c=$("code");if(h){h.innerHTML=highlightPython(c.value);h.scrollTop=c.scrollTop;h.scrollLeft=c.scrollLeft}}
+$("code").addEventListener("input",updateHighlight);
+$("code").addEventListener("scroll",()=>{const h=$("highlight");if(h){h.scrollTop=$("code").scrollTop;h.scrollLeft=$("code").scrollLeft}});
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();$("run").click()}});
+
+// Robust VS Code-style editor sync
+(function(){
+  const c=$("code"), h=$("highlight"), g=$("lineNumbers");
+  if(!c||!h)return;
+  c.style.webkitTextFillColor="transparent";
+  c.style.color="transparent";
+  c.addEventListener("focus",()=>{c.style.caretColor="#ffffff"});
+  c.addEventListener("input",()=>{
+    try{h.innerHTML=highlightPython(c.value);g.textContent=Array.from({length:Math.max(1,c.value.split("\n").length)},(_,i)=>i+1).join("\n");}
+    catch(err){h.textContent=c.value;}
+    h.scrollTop=c.scrollTop; h.scrollLeft=c.scrollLeft; g.scrollTop=c.scrollTop;
+  });
+  c.addEventListener("scroll",()=>{h.scrollTop=c.scrollTop;h.scrollLeft=c.scrollLeft;g.scrollTop=c.scrollTop});
+  h.innerHTML=highlightPython(c.value);
+})();
+
+
+// Editor typing helpers: Tab, automatic indentation, matching brackets/quotes, and clean Enter behavior.
+(function(){
+ const c=$("code"); if(!c) return;
+ c.addEventListener("keydown",function(e){
+   if(e.key==="Tab"){
+     e.preventDefault(); const a=this.selectionStart,b=this.selectionEnd;
+     this.setRangeText("    ",a,b,"end"); this.dispatchEvent(new Event("input",{bubbles:true})); return;
+   }
+   const pairs={'(':')','[':']','{':'}','"':'"',"'":"'"};
+   if(pairs[e.key]){
+     const a=this.selectionStart,b=this.selectionEnd;
+     if(a!==b){e.preventDefault(); const selected=this.value.slice(a,b); this.setRangeText(e.key+selected+pairs[e.key],a,b,"end"); this.selectionStart=a+1; this.selectionEnd=b+1; this.dispatchEvent(new Event("input",{bubbles:true}));}
+     else if(this.value[a]===pairs[e.key]){e.preventDefault();this.selectionStart=this.selectionEnd=a+1;}
+     return;
+   }
+   if(e.key==="Enter"){
+     e.preventDefault(); const pos=this.selectionStart; const before=this.value.slice(0,pos); const line=before.split("\n").pop();
+     const indent=(line.match(/^\s*/) || [""])[0];
+     const extra=/[:\{]\s*$/.test(line)?"    ":"";
+     const text="\n"+indent+extra; this.setRangeText(text,pos,this.selectionEnd,"end");
+     this.dispatchEvent(new Event("input",{bubbles:true}));
+   }
+ });
+})();
+
+tabs();lines();renderKeys();updateHighlight();makeWorker();
+</script>
+
+<script id="kruthi-start-script">
+(function(){
+ const splash=document.getElementById("kruthiSplash");
+ const start=document.getElementById("startKruthi");
+ if(!splash || !start) return;
+ start.addEventListener("click",()=>{
+   splash.classList.add("hide");
+   setTimeout(()=>{splash.remove()},500);
+   try{localStorage.setItem("kruthi_started","1")}catch(e){}
+ });
+ // Always show the animated welcome screen when opening the app.
+ try{localStorage.removeItem("kruthi_started")}catch(e){}
+})();
+</script>
+
+
+<script id="kruthi-top-clean-runtime">
+(function(){
+ function clean(){
+   const top=document.querySelector(".top"); if(!top)return;
+   [...top.querySelectorAll("button")].forEach(b=>{
+     const t=(b.textContent||"").trim().toLowerCase();
+     const a=((b.getAttribute("aria-label")||"")+" "+(b.getAttribute("title")||"")).toLowerCase();
+     if(t==="keyboard" || t==="☀" || t==="☼" || t==="🌙" || a.includes("keyboard") || a.includes("theme") || a.includes("dark") || a.includes("light")){
+       b.remove();
+     }
+   });
+ }
+ clean(); new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+
+<script id="kruthi-editor-enhancements">
+(function(){
+  function codeEl(){return document.getElementById("code")}
+  function lineEl(){return document.getElementById("lineNumbers")}
+  function highEl(){return document.getElementById("highlight")}
+
+  function escapeHTML(s){
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function colorPython(source){
+    let out="",i=0;
+    const keywords=new Set([
+      "and","as","assert","async","await","break","case","class","continue","def",
+      "del","elif","else","except","finally","for","from","global","if","import",
+      "in","is","lambda","match","nonlocal","not","or","pass","raise","return",
+      "try","while","with","yield"
+    ]);
+    const builtins=new Set([
+      "print","input","len","range","int","float","str","list","dict","set","tuple",
+      "bool","sum","min","max","abs","round","enumerate","zip","map","filter",
+      "sorted","reversed","open","type","isinstance","issubclass","object","super",
+      "any","all","repr","format","dir","help","eval","exec","getattr","setattr",
+      "hasattr","id","hash","iter","next","property"
+    ]);
+    while(i<source.length){
+      if(source[i]==="#"){
+        let j=source.indexOf("\n",i); if(j<0)j=source.length;
+        out+='<span class="syn-comment">'+escapeHTML(source.slice(i,j))+'</span>'; i=j; continue;
+      }
+      if(source[i]==='"' || source[i]==="'"){
+        const q=source[i]; let j=i+1;
+        while(j<source.length){
+          if(source[j]==="\\"){j+=2;continue}
+          if(source[j]===q){j++;break}
+          j++;
+        }
+        out+='<span class="syn-string">'+escapeHTML(source.slice(i,j))+'</span>'; i=j; continue;
+      }
+      if(/\d/.test(source[i])){
+        const m=source.slice(i).match(/^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+        if(m){out+='<span class="syn-number">'+m[0]+'</span>';i+=m[0].length;continue}
+      }
+      if(/[A-Za-z_]/.test(source[i])){
+        const m=source.slice(i).match(/^[A-Za-z_][A-Za-z0-9_]*/)[0];
+        let cls="";
+        if(["True","False","None","Ellipsis"].includes(m))cls="syn-bool";
+        else if(keywords.has(m))cls="syn-keyword";
+        else if(builtins.has(m))cls="syn-builtin";
+        else if(m==="self")cls="syn-self";
+        out+=cls?'<span class="'+cls+'">'+m+'</span>':escapeHTML(m);
+        i+=m.length;continue;
+      }
+      if(source[i]==="@"){
+        const m=source.slice(i).match(/^@[A-Za-z_][A-Za-z0-9_.]*/);
+        if(m){out+='<span class="syn-decorator">'+escapeHTML(m[0])+'</span>';i+=m[0].length;continue}
+      }
+      if("+-*/%=<>!&|^~:@".includes(source[i])){
+        const m=source.slice(i).match(/^[+\-*\/%=<>!&|^~:@]+/)[0];
+        out+='<span class="syn-op">'+escapeHTML(m)+'</span>';i+=m.length;continue;
+      }
+      out+=escapeHTML(source[i]);i++;
+    }
+    return out+"\n";
+  }
+
+  function updateAll(){
+    const c=codeEl(),h=highEl(),l=lineEl();
+    if(!c)return;
+    if(h)h.innerHTML=colorPython(c.value);
+    if(l){
+      const count=Math.max(1,(c.value.match(/\n/g)||[]).length+1);
+      l.textContent=Array.from({length:count},(_,i)=>String(i+1)).join("\n");
+      l.scrollTop=c.scrollTop;
+    }
+  }
+
+  window.kruthiUpdateEditor=updateAll;
+
+  document.addEventListener("input",function(e){
+    if(e.target===codeEl())updateAll();
+  },true);
+
+  document.addEventListener("scroll",function(e){
+    const c=codeEl();
+    if(e.target===c){
+      const h=highEl(),l=lineEl();
+      if(h){h.scrollTop=c.scrollTop;h.scrollLeft=c.scrollLeft}
+      if(l)l.scrollTop=c.scrollTop;
+    }
+  },true);
+
+  // Initial render and keep it synced after file operations.
+  setTimeout(updateAll,50);
+  setTimeout(updateAll,300);
+})();
+</script>
+
+
+<script id="clean-editor-fix">
+(function(){
+ const code=document.getElementById('code'), linesEl=document.getElementById('lineNumbers'), high=document.getElementById('highlight');
+ if(!code||!linesEl)return;
+ function sync(){
+   const count=Math.max(1,code.value.split('\n').length);
+   linesEl.textContent=Array.from({length:count},(_,i)=>String(i+1)).join('\n');
+   linesEl.scrollTop=code.scrollTop;
+   if(high){high.scrollTop=code.scrollTop; high.scrollLeft=code.scrollLeft;}
+ }
+ code.addEventListener('scroll',sync,{passive:true});
+ code.addEventListener('input',sync);
+ const oldLines=window.lines;
+ window.lines=sync;
+ // Keep file switching/clear operations visually synced.
+ const oldUpdate=window.kruthiUpdateEditor;
+ window.kruthiUpdateEditor=function(){if(oldUpdate)oldUpdate();sync();};
+ setTimeout(sync,0); setTimeout(sync,100); setTimeout(sync,500);
+})();
+</script>
+
+
+<script id="newfile-editor-stability">
+(function(){
+  const c=document.getElementById('code'), h=document.getElementById('highlight'), g=document.getElementById('lineNumbers');
+  if(!c||!h||!g)return;
+  function paint(){
+    const value=c.value||'';
+    try{
+      h.innerHTML=typeof highlightPython==='function' ? highlightPython(value) : value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }catch(e){
+      h.textContent=value;
+    }
+    const n=Math.max(1,value.split('\n').length);
+    g.textContent=Array.from({length:n},(_,i)=>String(i+1)).join('\n');
+    h.scrollTop=c.scrollTop; h.scrollLeft=c.scrollLeft; g.scrollTop=c.scrollTop;
+  }
+  c.addEventListener('input',paint,true);
+  c.addEventListener('scroll',paint,{passive:true});
+  window.kruthiPaintEditor=paint;
+  setTimeout(paint,0); setTimeout(paint,100); setTimeout(paint,500);
+})();
+</script>
+
+<script id="kruthi-pro-features">
+(function(){
+  const $=window.$;
+  const code=$('code'); if(!code) return;
+
+  /* ---------- Small editor toolbar ---------- */
+  const tabs=$('tabs');
+  if(tabs && !document.getElementById('editorTools')){
+    const bar=document.createElement('div'); bar.id='editorTools'; bar.className='editorTools';
+    bar.innerHTML='<button id="undoBtn">↶ Undo</button><button id="redoBtn">↷ Redo</button><button id="findBtn">🔎 Find</button><button id="replaceBtn">↔ Replace</button><button id="zipBtn">📦 ZIP</button>';
+    tabs.parentNode.insertBefore(bar,tabs.nextSibling);
+  }
+
+  /* ---------- Auto-save ---------- */
+  let saveTimer=0;
+  function autoSave(){
+    clearTimeout(saveTimer); saveTimer=setTimeout(()=>{try{files[current]=code.value;localStorage.pyflowFiles=JSON.stringify(files);localStorage.setItem('kruthi_autosaved_at',Date.now())}catch(e){}},250);
+  }
+  code.addEventListener('input',autoSave,true);
+
+  /* ---------- Undo / redo history ---------- */
+  let undoStack=[],redoStack=[],lastValue=code.value,restoring=false;
+  function seedUndo(){undoStack=[code.value];redoStack=[];lastValue=code.value}
+  seedUndo();
+  code.addEventListener('input',function(){
+    if(restoring)return;
+    const v=code.value;
+    if(v!==lastValue){undoStack.push(v); if(undoStack.length>120)undoStack.shift(); redoStack=[]; lastValue=v;}
+  },true);
+  function applyValue(v){restoring=true;code.value=v;code.dispatchEvent(new Event('input',{bubbles:true}));restoring=false;lastValue=v;autoSave();if(window.kruthiPaintEditor)window.kruthiPaintEditor();if(window.kruthiUpdateEditor)window.kruthiUpdateEditor();}
+  function undo(){if(undoStack.length<=1)return;redoStack.push(undoStack.pop());applyValue(undoStack[undoStack.length-1]);}
+  function redo(){if(!redoStack.length)return;const v=redoStack.pop();undoStack.push(v);applyValue(v)}
+  document.getElementById('undoBtn').onclick=undo; document.getElementById('redoBtn').onclick=redo;
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo()} if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();redo()}},true);
+
+  /* ---------- Find / Replace ---------- */
+  let fr=document.getElementById('findReplaceDialog');
+  if(!fr){
+    fr=document.createElement('div');fr.id='findReplaceDialog';fr.className='dialog';
+    fr.innerHTML='<div class="box"><h3>Find & Replace</h3><input class="inp" id="findText" placeholder="Find"><input class="inp" id="replaceText" placeholder="Replace with" style="margin-top:8px"><div class="actions"><button class="act" id="frClose">Close</button><button class="act" id="frNext">Find next</button><button class="act primary" id="frAll">Replace all</button></div><div class="featureNote" id="frStatus"></div></div>';
+    document.body.appendChild(fr);
+  }
+  function openFR(){fr.classList.add('open');setTimeout(()=>{$('findText').focus();},40)}
+  $('findBtn').onclick=openFR; $('replaceBtn').onclick=openFR; $('frClose').onclick=()=>fr.classList.remove('open');
+  $('frNext').onclick=()=>{
+    const q=$('findText').value;if(!q)return;const start=code.selectionEnd;const idx=code.value.indexOf(q,start>=0?start:0);const pos=idx<0?code.value.indexOf(q):idx;
+    if(pos<0){$('frStatus').textContent='Not found.';return} code.focus();code.setSelectionRange(pos,pos+q.length);$('frStatus').textContent='Found at line '+(code.value.slice(0,pos).split('\n').length)+'.';
+  };
+  $('frAll').onclick=()=>{
+    const q=$('findText').value;if(!q)return;const r=$('replaceText').value;const count=(code.value.match(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length;
+    if(!count){$('frStatus').textContent='Nothing to replace.';return} applyValue(code.value.split(q).join(r));$('frStatus').textContent='Replaced '+count+' occurrence(s).';
+  };
+
+  /* ---------- Auto indent + smarter brackets/quotes ---------- */
+  code.addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    const pos=this.selectionStart, before=this.value.slice(0,pos), line=before.split('\n').pop();
+    const indent=(line.match(/^\s*/) || [''])[0];
+    const trimmed=line.trim();
+    let next=indent;
+    if(/[:\{]\s*(#.*)?$/.test(trimmed))next+='    ';
+    const prevLine=before.split('\n').slice(-2,-1)[0]||'';
+    if(/^\s*(return|pass|break|continue|raise)\b/.test(trimmed))next=indent;
+    this.setRangeText('\n'+next,pos,this.selectionEnd,'end');this.dispatchEvent(new Event('input',{bubbles:true}));e.stopImmediatePropagation();
+  },true);
+  code.addEventListener('keydown',function(e){
+    const pairs={'(':')','[':']','{':'}','"':'"',"'":"'"};
+    if(!(e.key in pairs))return;
+    const a=this.selectionStart,b=this.selectionEnd, next=this.value[a];
+    if(a===b && next===pairs[e.key]){e.preventDefault();this.selectionStart=this.selectionEnd=a+1;e.stopImmediatePropagation();return}
+    if(a!==b){e.preventDefault();e.stopImmediatePropagation();const selected=this.value.slice(a,b);this.setRangeText(e.key+selected+pairs[e.key],a,b,'end');this.selectionStart=a+1;this.selectionEnd=b+1;this.dispatchEvent(new Event('input',{bubbles:true}));}
+  },true);
+
+  /* ---------- Suggestions ---------- */
+  let sb=document.getElementById('suggestBar');
+  if(!sb){sb=document.createElement('div');sb.id='suggestBar';sb.className='suggestBar';sb.innerHTML='<span style="color:#6f7580;font-size:12px">Suggestions</span>';const kb=$('keyboard');kb.parentNode.insertBefore(sb,kb)}
+  const suggestionWords=[...new Set([...(pythonKeywords||[]),...(builtins||[]),...(methods||[]),...(types||[])])];
+  function updateSuggestions(){
+    const pos=code.selectionStart;const left=code.value.slice(0,pos);const m=left.match(/[A-Za-z_][A-Za-z0-9_]*$/);const prefix=m?m[0]:'';
+    sb.innerHTML='';
+    if(!prefix){sb.innerHTML='<span style="color:#6f7580;font-size:12px">Type Python code…</span>';return}
+    const list=suggestionWords.filter(x=>x.toLowerCase().startsWith(prefix.toLowerCase())&&x.toLowerCase()!==prefix.toLowerCase()).slice(0,7);
+    if(!list.length){sb.innerHTML='<span style="color:#6f7580;font-size:12px">No suggestions</span>';return}
+    list.forEach(word=>{const b=document.createElement('button');b.textContent=word;b.onclick=()=>{const start=pos-prefix.length;code.setRangeText(word,start,pos,'end');code.dispatchEvent(new Event('input',{bubbles:true}));code.focus()};sb.appendChild(b)})
+  }
+  code.addEventListener('input',updateSuggestions,true);code.addEventListener('keyup',updateSuggestions,true);code.addEventListener('click',updateSuggestions,true);
+
+  /* ---------- Better Problems ---------- */
+  let pb=document.getElementById('problemBox');
+  if(!pb){pb=document.createElement('div');pb.id='problemBox';pb.className='problemBox';$('console').parentNode.appendChild(pb)}
+  let lastProblem=null;
+  function showProblem(errText){
+    const text=String(errText||'');
+    let line=null;let m=text.match(/File .*?, line (\d+)/);if(m)line=Number(m[1]);
+    if(!line){m=text.match(/line\s+(\d+)/i);if(m)line=Number(m[1])}
+    const type=(text.match(/([A-Za-z]+Error|Warning):/)||[])[1]||'PythonError';
+    const message=(text.match(/(?:[A-Za-z]+Error|Warning):\s*(.*)/)||[])[1]||text.split('\n').filter(Boolean).slice(-1)[0]||'Unknown problem';
+    lastProblem={line,type,message,raw:text};
+    $('prob').textContent='PROBLEMS 1';
+    pb.innerHTML='<div class="problemItem"><b>❌ '+esc(type)+'</b><br>'+esc(message)+(line?'<br><span>Line '+line+'</span><br><button id="jumpProblem">Go to line '+line+'</button>':'')+'</div>';
+    const jump=document.getElementById('jumpProblem');if(jump)jump.onclick=()=>{if(line){const lines=code.value.split('\n');let p=0;for(let i=0;i<line-1;i++)p+=lines[i].length+1;code.focus();code.setSelectionRange(p,p);code.scrollTop=Math.max(0,(line-3)*code.clientHeight/Math.max(1,lines.length));}}
+  }
+  function clearProblem(){lastProblem=null;$('prob').textContent='PROBLEMS';pb.innerHTML='<div style="color:#8e949f">✓ No problems in the last run.</div>'}
+  const oldFinish=window.finishRun;
+  window.finishRun=function(err,msg){if(err)showProblem(msg);else clearProblem();if(oldFinish)oldFinish(err,msg)};
+  $('term').onclick=function(){$('term').classList.add('active');$('prob').classList.remove('active');$('console').style.display='block';$('problemBox').classList.remove('show')};
+  $('prob').onclick=function(){$('prob').classList.add('active');$('term').classList.remove('active');$('console').style.display='none';$('problemBox').classList.add('show');if(!lastProblem)clearProblem()};
+
+  /* ---------- Folders ---------- */
+  let folders=[];try{folders=JSON.parse(localStorage.kruthiFolders||'[]')}catch(e){folders=[]}
+  function saveFolders(){localStorage.kruthiFolders=JSON.stringify(folders)}
+  const drawer=$('mask')?.querySelector('.drawer');
+  if(drawer && !$('newFolder')){
+    const nf=document.createElement('button');nf.className='mi';nf.id='newFolder';nf.textContent='📁 New folder';drawer.insertBefore(nf,$('files'));
+    nf.onclick=()=>{const name=prompt('Folder name');if(!name)return;const clean=name.trim().replace(/[\\/:*?"<>|]/g,'');if(!clean)return;if(!folders.includes(clean))folders.push(clean);saveFolders();alert('Folder created: '+clean);renderDrawer()};
+  }
+  const newDialog=$('dialog');
+  if(newDialog && !$('newFolderField')){
+    const inp=document.createElement('input');inp.className='inp';inp.id='newFolderField';inp.placeholder='Folder (optional)';inp.style.marginTop='8px';$('newName').after(inp);
+  }
+  /* replace Create handler so files can live inside folders */
+  $('create').onclick=()=>{
+    let n=$('newName').value.trim()||'untitled.py';let folder=$('newFolderField')?.value.trim().replace(/[\\/:*?"<>|]/g,'')||'';if(!n.toLowerCase().endsWith('.py'))n+='.py';if(folder)n=folder+'/'+n;
+    if(files[n]){openFile(n);return}
+    persist();files[n]='';current=n;code.value='';localStorage.pyflowFiles=JSON.stringify(files);tabs();lines();updateHighlight();$('dialog').classList.remove('open');$('newName').value='';if($('newFolderField'))$('newFolderField').value='';closeDrawer();code.focus();seedUndo();
+  };
+
+  /* Group file display by folder after the existing drawer renders */
+  const baseRender=window.renderDrawer;
+  window.renderDrawer=function(){baseRender();const list=$('fileList');if(!list)return;const cards=[...list.children];const by={};cards.forEach(card=>{const txt=card.querySelector('.cn')?.textContent||'';const path=txt.replace(/^📄\s*/,'');const folder=path.includes('/')?path.split('/').slice(0,-1).join('/'):'ROOT';(by[folder]??=[]).push(card)});list.innerHTML='';Object.entries(by).forEach(([folder,arr])=>{if(folder!=='ROOT'){const h=document.createElement('div');h.className='folderTitle';h.textContent='📁 '+folder;list.appendChild(h)}arr.forEach(c=>list.appendChild(c))});};
+
+  /* ---------- ZIP export (no external library) ---------- */
+  function crc32(bytes){let table=crc32.table;if(!table){table=crc32.table=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);table[n]=c>>>0}}let c=0xffffffff;for(const b of bytes)c=table[(c^b)&255]^(c>>>8);return (c^0xffffffff)>>>0}
+  function u16(n){return [n&255,(n>>>8)&255]}
+  function u32(n){return [n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]}
+  function makeZip(entries){
+    const enc=new TextEncoder(),parts=[],central=[];let offset=0;
+    for(const e of entries){const name=enc.encode(e.name),data=enc.encode(e.data),crc=crc32(data),local=[0x50,0x4b,3,4,20,0,0,0,0,0,0,0,0,0,...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),0, ...name,...data];parts.push(new Uint8Array(local));central.push({name,crc,size:data.length,offset});offset+=local.length}
+    let cdSize=0;const cd=[];for(const e of central){const h=new Uint8Array([0x50,0x4b,1,2,20,0,20,0,0,0,0,0,0,0,0,0,...u32(e.crc),...u32(e.size),...u32(e.size),...u16(e.name.length),0,0,0,0,0,0,...u32(e.offset),...e.name]);cd.push(h);cdSize+=h.length}
+    const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(central.length),...u16(central.length),...u32(cdSize),...u32(offset),0,0]);return new Blob([...parts,...cd,end],{type:'application/zip'})
+  }
+  function exportZip(){
+    files[current]=code.value;localStorage.pyflowFiles=JSON.stringify(files);
+    const entries=Object.entries(files).map(([name,data])=>({name:name.replace(/^\/+/,''),data:String(data||'')}));
+    if(!entries.length){alert('No Python files to export.');return}
+    const blob=makeZip(entries);const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='kruthi-project.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)
+  }
+  $('zipBtn').onclick=exportZip;
+  const zipMenu=document.createElement('button');zipMenu.className='mi';zipMenu.textContent='📦 Export project ZIP';zipMenu.id='exportZipMenu';drawer.insertBefore(zipMenu,$('clearEditor'));zipMenu.onclick=()=>{exportZip();closeDrawer()};
+
+  /* ---------- Share actions ---------- */
+  if($('sharePythonFile'))$('sharePythonFile').onclick=shareAsFile;
+  if($('sharePythonCode'))$('sharePythonCode').onclick=shareAsText;
+  if($('copyPythonCode'))$('copyPythonCode').onclick=copyShareCode;
+  if($('shareCancel'))$('shareCancel').onclick=()=>$('shareDialog').classList.remove('open');
+
+  /* ---------- Share fix ---------- */
+  window.shareFile=async function(n=current){openShareDialog(n)};
+  $('shareTop').onclick=()=>openShareDialog(current);
+  $('shareMenu').onclick=()=>{openShareDialog(current);closeDrawer()};
+
+  /* ---------- File rename fix + folder-safe rename ---------- */
+  window.startRename=function(n=current){$('renameName').value=n.split('/').pop().replace(/\.py$/i,'');$('renameDialog').classList.add('open');setTimeout(()=>{$('renameName').focus();$('renameName').select()},40)};
+  window.doRename=function(){
+    files[current]=code.value;let old=current,n=$('renameName').value.trim();if(!n){alert('Enter a file name.');return}n=n.replace(/[\\/:*?"<>|]/g,'');if(!n){alert('Enter a valid file name.');return}if(!n.toLowerCase().endsWith('.py'))n+='.py';const folder=old.includes('/')?old.split('/').slice(0,-1).join('/')+'/':'';const target=folder+n;if(target!==old&&files[target]!==undefined){alert('A file with that name already exists.');return}const data=files[old]||'';delete files[old];files[target]=data;current=target;localStorage.pyflowFiles=JSON.stringify(files);code.value=data;tabs();lines();updateHighlight();renderDrawer();$('renameDialog').classList.remove('open');code.focus();seedUndo();
+  };
+  $('renameSave').onclick=window.doRename;$('renameCancel').onclick=()=>$('renameDialog').classList.remove('open');
+
+  /* ---------- Auto-save startup / file switch safety ---------- */
+  window.addEventListener('beforeunload',()=>{try{files[current]=code.value;localStorage.pyflowFiles=JSON.stringify(files)}catch(e){}});
+  setInterval(autoSave,2000);
+
+  /* refresh */
+  setTimeout(()=>{try{renderDrawer()}catch(e){} updateSuggestions();},100);
+})();
+</script>
+
+</body>
+</html>
